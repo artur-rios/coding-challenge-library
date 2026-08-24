@@ -1,0 +1,23 @@
+# Keeps the build context to what the Dockerfile actually copies. Without this, every bin/ and obj/
+# in the tree is uploaded to the daemon on each build - slow, and worse, a stale obj/ from a host
+# build can end up shadowing the one the container build produces.
+**/bin/
+**/obj/
+**/TestResults/
+**/.vs/
+**/.idea/
+**/.vscode/
+
+.git/
+.github/
+.gitignore
+.dockerignore
+
+# Tests are not built into the image, and neither is the documentation.
+tests/
+docs/
+k8s/
+*.md
+
+# Never: these are the files a developer fills in with real credentials.
+docker/*.env
