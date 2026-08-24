@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <!-- IMeterFactory, so LibraryMetrics is a scoped-lifetime service like everything else rather
+           than a static Meter nothing can dispose or isolate between tests. -->
+      <PackageReference Include="Microsoft.Extensions.Diagnostics.Abstractions" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Common\Library.WebApi.Core\Library.WebApi.Core.csproj" />
+      <ProjectReference Include="..\..\Domain\Library.Domain\Library.Domain.csproj" />
+    </ItemGroup>
+
+</Project>
