@@ -1,0 +1,34 @@
+using Library.Mediator.Command;
+
+namespace Library.Command.Output;
+
+/// <summary>The state of a book after a create or update, as the caller sees it.</summary>
+public class BookCommandOutput : CommandOutput
+{
+    /// <summary>The book's public identifier.</summary>
+    public Guid Id { get; set; }
+
+    /// <summary>Title.</summary>
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>ISBN, in the normalised form that is stored.</summary>
+    public string Isbn { get; set; } = string.Empty;
+
+    /// <summary>Author.</summary>
+    public string Author { get; set; } = string.Empty;
+
+    /// <summary>How many copies the library owns.</summary>
+    public int TotalCopies { get; set; }
+
+    /// <summary>How many are on the shelf.</summary>
+    public int AvailableCopies { get; set; }
+
+    /// <summary>Whether the book may still be lent.</summary>
+    public bool IsActive { get; set; }
+
+    /// <summary>Creation timestamp, UTC.</summary>
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>Last update timestamp, UTC.</summary>
+    public DateTime UpdatedAt { get; set; }
+}
