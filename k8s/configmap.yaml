@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: library-api-config
+  namespace: library
+  labels:
+    app.kubernetes.io/name: library-api
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+
+  # Where OpenTelemetry traces and metrics go. The instrumentation runs whether or not this is set;
+  # with it empty the API collects and exports nowhere, which is what lets the same image run in a
+  # cluster without a collector.
+  LIBRARY_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4317"
+
+  # How long a used Idempotency-Key is honoured.
+  LIBRARY_IDEMPOTENCY_RETENTION_HOURS: "24"
+
+  # Explicitly false on the API pods. The migration Job owns the schema; see k8s/README.md.
+  LIBRARY_RUN_MIGRATIONS: "false"

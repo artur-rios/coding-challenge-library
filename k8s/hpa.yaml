@@ -1,0 +1,48 @@
+# Scales between the two replicas the Deployment starts with and the eleven the challenge names.
+#
+# The range is safe because nothing in the API keeps state in the process: availability is decided by
+# a conditional UPDATE against PostgreSQL, idempotency by a unique index, and the cache is an
+# accelerator no decision depends on. Adding a replica adds throughput and changes no outcome.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: library-api
+  namespace: library
+  labels:
+    app.kubernetes.io/name: library-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: library-api
+  minReplicas: 2
+  maxReplicas: 11
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      # Reacts quickly to load: a queue of loan requests is exactly what more replicas help with.
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+    scaleDown:
+      # Slowly, and this is the asymmetry that matters. Each scale-down closes connections to
+      # PostgreSQL, and flapping between eight and four replicas costs more than running eight.
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60

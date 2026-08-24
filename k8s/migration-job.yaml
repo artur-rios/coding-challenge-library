@@ -1,0 +1,62 @@
+# Brings the schema up to date, once, before any API replica starts.
+#
+# The image is the same one the Deployment runs; the entrypoint switches on LIBRARY_RUN_MIGRATIONS
+# and runs the EF Core bundle baked into it, then execs the command below, which exits.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: library-api-migrate
+  namespace: library
+  labels:
+    app.kubernetes.io/name: library-api
+    app.kubernetes.io/component: migration
+  annotations:
+    # For a Helm-based rollout this is what makes the Job run before the Deployment is updated. With
+    # plain kubectl the ordering is the operator's, and the Deployment's initContainer below is the
+    # belt to this Job's braces.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-1"
+spec:
+  # A failed migration is a deployment that should stop, not one that should keep trying: three
+  # attempts, then the Job fails visibly with a log somebody can read.
+  backoffLimit: 3
+  # Cleaned up an hour after it finishes, so a namespace does not accumulate one Job per release.
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: library-api
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: library-api:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/true"]
+          env:
+            - name: LIBRARY_RUN_MIGRATIONS
+              value: "true"
+            - name: LIBRARY_DATA_CONNECTIONSTRING
+              valueFrom:
+                secretKeyRef:
+                  name: library-api-secrets
+                  key: LIBRARY_DATA_CONNECTIONSTRING
+          resources:
+            # Modest: it runs a handful of DDL statements and exits. The limit exists so a runaway
+            # migration cannot starve the node, not because this is expected to need it.
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
