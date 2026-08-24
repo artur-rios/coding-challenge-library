@@ -1,0 +1,12 @@
+# Normalise line endings in the repository, so a clone on Windows and one on Linux produce the same
+# blobs and a diff never turns into "every line changed". The entrypoint script is the exception that
+# has to be enforced rather than guessed: it runs inside a Linux container, and CRLF there makes the
+# shell fail to find its own interpreter.
+* text=auto
+
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.docx binary
