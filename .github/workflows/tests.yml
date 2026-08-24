@@ -1,0 +1,112 @@
+name: Tests
+
+# Runs the whole suite on every pull request and on every commit that lands on main.
+#
+# The three suites are separate steps of one job rather than separate jobs: they share a single
+# restore and build, and keeping them in order means a broken business rule is reported in seconds
+# rather than after the runner has spent minutes pulling PostgreSQL and Redis.
+#
+# No path filters. A test suite is the one workflow that should run for every change - a filter would
+# let a change to an unlisted path merge without evidence that anything still passes.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/Library.slnx
+
+      - name: Scan for vulnerable dependencies
+        # Straight after restore and before the build: it needs the resolved graph and nothing else,
+        # so a published advisory is reported in seconds rather than after the container suites.
+        #
+        # A dependency does not have to change to become vulnerable - the advisory arrives on its own
+        # schedule - which is why this runs on every build rather than only when a package file
+        # changes.
+        run: |
+          dotnet list src/Library.slnx package --vulnerable --include-transitive > vulnerabilities.txt
+          cat vulnerabilities.txt
+          if grep -q "has the following vulnerable packages" vulnerabilities.txt; then
+            echo "::error::Vulnerable packages found. See the report above."
+            exit 1
+          fi
+
+      - name: Build solution
+        # Built once here so all three test steps run with --no-build and none of them pays for it.
+        run: dotnet build src/Library.slnx --configuration Release --no-restore
+
+      - name: Run unit tests
+        # The Category trait comes from the [UnitFact] / [UnitTheory] attributes, so this filter needs
+        # no per-project configuration.
+        run: >-
+          dotnet test src/Library.slnx
+          --configuration Release
+          --no-build
+          --filter "Category=Unit"
+          --collect:"XPlat Code Coverage"
+
+      - name: Run integration tests
+        # These start real PostgreSQL and Redis containers through Testcontainers. The ubuntu-latest
+        # runner ships a working Docker daemon, so nothing extra is needed - but that is also why
+        # this suite cannot move to a Windows or macOS runner as it stands.
+        run: >-
+          dotnet test src/Library.slnx
+          --configuration Release
+          --no-build
+          --filter "Category=Integration"
+          --collect:"XPlat Code Coverage"
+
+      - name: Run functional tests
+        run: >-
+          dotnet test src/Library.slnx
+          --configuration Release
+          --no-build
+          --filter "Category=Functional"
+          --collect:"XPlat Code Coverage"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/TestResults/**'
+          if-no-files-found: warn
+
+  # Nothing else in CI builds the container image, and it can break on its own: the Dockerfile
+  # restores from a hand-listed set of project files rather than from the whole tree, so a new project
+  # that restore depends on is missing from the build context and fails there while every other job
+  # stays green.
+  #
+  # Build only, no push and no run: the point is that the image can still be produced, and the API
+  # inside it is already covered by the suites above.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build the container image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
