@@ -1,0 +1,123 @@
+# Everything needed to run the API locally: PostgreSQL, Redis, a one-shot migrator and the API.
+#
+#     cp docker/local.env.example docker/local.env      # then edit the two passwords
+#     docker compose --env-file docker/local.env up -d --build
+#
+# The API answers on http://localhost:8080, with Swagger UI at http://localhost:8080/swagger.
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-library}
+      POSTGRES_USER: ${DB_USER:?set DB_USER in the env file}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in the env file}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      # Published so a developer can connect a client to it. Bound to the loopback interface only:
+      # this container has a password from a file in the repository's own example, and it has no
+      # business being reachable from the network.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    healthcheck:
+      # pg_isready rather than a psql query: it is what the image ships for exactly this, and the
+      # migrator below waits on it, so "started" must genuinely mean "accepting connections".
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME:-library}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Persistence off. Redis holds nothing here that PostgreSQL is not the source of truth for, so
+    # there is nothing worth writing to disk - and an appendonly file would only create something to
+    # restore that the API would ignore anyway.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # A container of its own, run once, whose only job is to bring the schema up to date and exit.
+  #
+  # This is the arrangement that survives more than one replica: if the API applied migrations on
+  # start-up, every replica would run the migrator at once. EF's advisory lock makes that safe rather
+  # than corrupting, but it also serialises every start behind the first and turns a failed migration
+  # into a crash loop across the whole deployment. The Kubernetes manifests use a Job for the same
+  # reason.
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${API_IMAGE:-library-api}:${API_IMAGE_TAG:-latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LIBRARY_RUN_MIGRATIONS: "true"
+      LIBRARY_DATA_CONNECTIONSTRING: "Host=postgres;Port=5432;Database=${DB_NAME:-library};Username=${DB_USER};Password=${DB_PASSWORD}"
+    # The entrypoint applies the migrations and then execs this, which exits immediately - so the
+    # container finishes rather than going on to start an API nobody asked for.
+    command: ["/bin/true"]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${API_IMAGE:-library-api}:${API_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrator:
+        # Not merely "started": the API must not take traffic against a schema that is still being
+        # created.
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+
+      # The API resolves its whole configuration from the environment. The connection string is
+      # assembled from parts so an environment only has to state what actually differs.
+      #
+      # No search path is pinned, and it does not need to be: every table the model owns is
+      # schema-qualified by the model, the two hand-written UPDATE statements qualify their table
+      # explicitly, and the migrations history table is qualified to public - which is what stops it
+      # resolving through "$user" to whichever schema happens to share the login's name.
+      LIBRARY_DATA_CONNECTIONSTRING: "Host=postgres;Port=5432;Database=${DB_NAME:-library};Username=${DB_USER};Password=${DB_PASSWORD}"
+      LIBRARY_REDIS_CONNECTIONSTRING: "redis:6379"
+
+      # Unset by design: the migrator above owns the schema. See the comment on that service.
+      LIBRARY_RUN_MIGRATIONS: "false"
+
+      # How long a used Idempotency-Key is honoured.
+      LIBRARY_IDEMPOTENCY_RETENTION_HOURS: ${LIBRARY_IDEMPOTENCY_RETENTION_HOURS:-24}
+
+      # Where OpenTelemetry traces and metrics are exported. Empty by default: the instrumentation
+      # still runs and still collects, it simply exports nowhere, so there is no code path that only
+      # a deployment with a collector exercises.
+      LIBRARY_OTLP_ENDPOINT: ${LIBRARY_OTLP_ENDPOINT:-}
+
+    ports:
+      # Host side of the mapping, so an environment can pick the interface as well as the port:
+      # "8080" publishes on every interface, "127.0.0.1:8080" only to the host.
+      - "${API_PORT:-8080}:8080"
+
+    healthcheck:
+      # Liveness, not readiness: this answers whether the process is up, which is the question
+      # Compose is asking. Readiness is what an orchestrator in front of several replicas asks.
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  postgres-data:
