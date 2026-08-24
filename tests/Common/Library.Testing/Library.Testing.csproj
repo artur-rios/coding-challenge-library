@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <!-- Support code, not a test project. Without this `dotnet test` on the solution tries to
+             run it as one, and the run aborts before the real suites report. -->
+        <IsTestProject>false</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" />
+      <!-- DefaultMeterFactory, so a unit test can construct LibraryMetrics the same way the host does. -->
+      <PackageReference Include="Microsoft.Extensions.Diagnostics" />
+      <PackageReference Include="Testcontainers.PostgreSql" />
+      <PackageReference Include="Testcontainers.Redis" />
+      <PackageReference Include="xunit" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\Application\Library.Shared\Library.Shared.csproj" />
+      <ProjectReference Include="..\..\..\src\Common\Library.Data.Relational\Library.Data.Relational.csproj" />
+      <!-- The container fixtures build an AppDbContext and apply migrations to it, and the fake
+           idempotency store raises a genuine Npgsql unique violation - both need the data project. -->
+      <ProjectReference Include="..\..\..\src\Infrastructure\Library.Data\Library.Data.csproj" />
+      <ProjectReference Include="..\..\..\src\Infrastructure\Library.Cache\Library.Cache.csproj" />
+    </ItemGroup>
+
+</Project>
