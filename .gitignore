@@ -478,15 +478,13 @@ Doxygen/
 /docs/.hugo_build.lock
 *.DS_Store
 
-# App settings
-appsettings.api.Local.json
-appsettings.api.Development.json
-appsettings.api.Staging.json
-appsettings.api.Production.json
-appsettings.Local.json
-appsettings.Development.json
-appsettings.Staging.json
-appsettings.Production.json
+# App settings.
+#
+# Tracked, not ignored, and that is a decision about this project rather than a default: the
+# appsettings files here carry log levels and nothing else. Every secret and every connection string
+# comes from the environment (see the README's configuration table), so there is nothing in them to
+# withhold - and a per-environment file that is not in the repository is a per-environment behaviour
+# nobody can review.
 
 # Env files
 .env.local
