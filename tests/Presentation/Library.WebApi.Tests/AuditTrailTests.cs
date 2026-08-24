@@ -183,7 +183,7 @@ public class AuditTrailTests(LibraryContainers containers) : LibraryApiTest(cont
 
         // Then
         Assert.NotEmpty(events.Body!.Data!);
-        Assert.All(events.Body.Data, entry =>
+        Assert.All(events.Body.Data!, entry =>
         {
             Assert.Equal(AuditEntityTypes.Book, entry.EntityType);
             Assert.Equal(book.Id, entry.EntityId);

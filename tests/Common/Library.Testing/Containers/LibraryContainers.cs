@@ -27,13 +27,12 @@ namespace Library.Testing.Containers;
 /// </remarks>
 public sealed class LibraryContainers : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
-        .Build();
+    // Pinned images, and the same major versions Compose runs. A suite that silently followed
+    // "latest" would report a passing build on a database the deployment does not use.
+    private readonly PostgreSqlContainer _postgres =
+        new PostgreSqlBuilder("postgres:17-alpine").Build();
 
-    private readonly RedisContainer _redis = new RedisBuilder()
-        .WithImage("redis:7-alpine")
-        .Build();
+    private readonly RedisContainer _redis = new RedisBuilder("redis:7-alpine").Build();
 
     /// <summary>The connection string of the running PostgreSQL container.</summary>
     public string PostgresConnectionString => _postgres.GetConnectionString();

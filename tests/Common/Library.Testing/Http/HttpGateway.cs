@@ -13,7 +13,7 @@ namespace Library.Testing.Http;
 public class HttpGateway(HttpClient client)
 {
     /// <summary>The underlying client, for the occasional request that needs a custom header.</summary>
-    public HttpClient Client { get; } = client;
+    public HttpClient Client => client;
 
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)
     {
