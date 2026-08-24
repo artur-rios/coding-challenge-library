@@ -1,0 +1,125 @@
+namespace Library.Output;
+
+/// <summary>
+///     Represents the outcome of an operation and provides a standardized way to collect messages,
+///     errors and a timestamp. Every handler in this codebase returns one of these rather than
+///     throwing, so a refusal a caller is meant to see travels the same path as a success.
+/// </summary>
+public class ProcessOutput
+{
+    private List<string> _messages = [];
+    private List<string> _errors = [];
+
+    /// <summary>
+    ///     Informational messages produced during the process. Never <c>null</c>: assigning
+    ///     <c>null</c> - as a deserializer does for an explicit JSON <c>null</c> - resets it to an
+    ///     empty list.
+    /// </summary>
+    public List<string> Messages
+    {
+        get => _messages;
+        set => _messages = value ?? [];
+    }
+
+    /// <summary>
+    ///     Error messages produced during the process. While this list is empty
+    ///     <see cref="Success" /> evaluates to <c>true</c>. Never <c>null</c>, on the same terms as
+    ///     <see cref="Messages" />.
+    /// </summary>
+    public List<string> Errors
+    {
+        get => _errors;
+        set => _errors = value ?? [];
+    }
+
+    /// <summary>UTC timestamp representing when this output instance was created.</summary>
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Indicates whether the process completed successfully (no errors were added).</summary>
+    public bool Success => Errors.Count == 0;
+
+    /// <summary>Creates a new <see cref="ProcessOutput" /> instance.</summary>
+    public static ProcessOutput New => new();
+
+    /// <summary>Adds a non-empty error message to the output.</summary>
+    public void AddError(string error)
+    {
+        if (string.IsNullOrWhiteSpace(error))
+        {
+            return;
+        }
+
+        Errors.Add(error);
+    }
+
+    /// <summary>
+    ///     Adds multiple error messages to the output, ignoring empty or whitespace entries. A
+    ///     <c>null</c> collection is ignored.
+    /// </summary>
+    public void AddErrors(IEnumerable<string>? errors)
+    {
+        if (errors is null)
+        {
+            return;
+        }
+
+        Errors.AddRange(errors.Where(error => !string.IsNullOrWhiteSpace(error)));
+    }
+
+    /// <summary>Adds a non-empty informational message to the output.</summary>
+    public void AddMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        Messages.Add(message);
+    }
+
+    /// <summary>
+    ///     Adds multiple informational messages to the output, ignoring empty or whitespace entries.
+    ///     A <c>null</c> collection is ignored.
+    /// </summary>
+    public void AddMessages(IEnumerable<string>? messages)
+    {
+        if (messages is null)
+        {
+            return;
+        }
+
+        Messages.AddRange(messages.Where(message => !string.IsNullOrWhiteSpace(message)));
+    }
+
+    /// <summary>Fluent helper to add a single error and return the same instance.</summary>
+    public ProcessOutput WithError(string error)
+    {
+        AddError(error);
+
+        return this;
+    }
+
+    /// <summary>Fluent helper to add multiple errors and return the same instance.</summary>
+    public ProcessOutput WithErrors(IEnumerable<string>? errors)
+    {
+        AddErrors(errors);
+
+        return this;
+    }
+
+    /// <summary>Fluent helper to add a single informational message and return the same instance.</summary>
+    public ProcessOutput WithMessage(string message)
+    {
+        AddMessage(message);
+
+        return this;
+    }
+
+    /// <summary>Fluent helper to add multiple informational messages and return the same instance.</summary>
+    public ProcessOutput WithMessages(IEnumerable<string>? messages)
+    {
+        AddMessages(messages);
+
+        return this;
+    }
+}
