@@ -1,0 +1,25 @@
+meta {
+  name: Return a copy
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{host}}/loans/{{loanId}}/return
+  body: none
+  auth: none
+}
+
+docs {
+  200. The loan is kept and moves to Returned, with a returnedAt timestamp beside the
+  original dates; the copy goes back on the shelf.
+
+  Both halves are conditional updates. The loan moves only if it is still Active, so two
+  concurrent returns cannot both succeed - which would otherwise credit the shelf with two
+  copies for one loan. The shelf is credited only if that would not push the available count
+  past the total.
+
+  Repeating this is a 409 and the shelf is not credited twice. The audit entry records
+  wasOverdue, so the trail carries the fact rather than leaving it to be recomputed from two
+  timestamps.
+}

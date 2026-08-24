@@ -1,0 +1,54 @@
+meta {
+  name: Create a book
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/books
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Refactoring",
+    "isbn": "{{seedIsbn}}",
+    "author": "Martin Fowler",
+    "totalCopies": 1
+  }
+}
+
+script:pre-request {
+  // A fresh, checksum-valid ISBN-13 per run, so this request always creates a book and always
+  // stores bookId. A fixed one would answer 409 on the second run - correctly, since the ISBN is
+  // unique - and then every request below would run against a bookId that was never filled in.
+  //
+  // The checksum matters: the API verifies it rather than only the length, so a random 13 digits
+  // would be refused as an invalid ISBN.
+  const digits = String(Date.now()).slice(-12).padStart(12, "0");
+  const sum = [...digits].reduce((total, d, i) => total + Number(d) * (i % 2 === 0 ? 1 : 3), 0);
+
+  bru.setVar("seedIsbn", digits + ((10 - (sum % 10)) % 10));
+}
+
+script:post-response {
+  if (res.body.data && res.body.data.id) {
+    bru.setVar("bookId", res.body.data.id);
+  }
+}
+
+docs {
+  201. Stores the new book's id as bookId, which every other request in this collection uses.
+
+  totalCopies is 1 on purpose: it is what makes a second loan attempt demonstrate the
+  availability refusal rather than quietly succeeding twice.
+
+  The ISBN is validated by checksum, not only by length, and stored normalised - so
+  978-0-13-475759-9 and 9780134757599 are the same book and the second one is a 409. To seed a
+  specific title, replace {{seedIsbn}} in the body with the ISBN you want.
+}

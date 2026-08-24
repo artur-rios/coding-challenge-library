@@ -1,0 +1,19 @@
+meta {
+  name: Read a reader's loans
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/users/{{userId}}/loans?pageNumber=1&pageSize=20
+  body: none
+  auth: none
+}
+
+docs {
+  200, or 404 when no reader holds that identifier - rather than an empty page, which would
+  be indistinguishable from a reader who has never borrowed anything.
+
+  This is the reader's history, not their current shelf: returned and cancelled loans are
+  included. Add status=Active to narrow it to what they are holding right now.
+}

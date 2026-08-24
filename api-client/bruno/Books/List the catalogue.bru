@@ -1,0 +1,23 @@
+meta {
+  name: List the catalogue
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/books?pageNumber=1&pageSize=20&title=Refactoring&includeInactive=false
+  body: none
+  auth: none
+}
+
+docs {
+  200. Served through Redis when a matching page is cached; every catalogue write drops the
+  whole listing prefix, so the page a write invalidated is rebuilt on the next call.
+
+  pageNumber starts at 1 and pageSize is capped at 200. Both are validated, so 0 or 100000
+  answers 400 rather than being silently clamped - an unbounded page size is one request
+  asking the database to materialise the whole catalogue.
+
+  Deactivated books are excluded unless includeInactive=true: browsing shows what can be
+  borrowed, and a withdrawn title is still reachable by asking for it directly.
+}

@@ -1,0 +1,20 @@
+meta {
+  name: Read the loan history
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{host}}/books/{{bookId}}/history?pageNumber=1&pageSize=20
+  body: none
+  auth: none
+}
+
+docs {
+  200. Every loan ever made of this book, in every state, newest first.
+
+  Returned and cancelled loans are included by default and there is no way to exclude them
+  wholesale - only to narrow to one state with status=Active|Returned|Cancelled. A history
+  endpoint that quietly omitted the terminal states would perform, one query at a time,
+  exactly the deletion this API refuses to perform.
+}

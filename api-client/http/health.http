@@ -1,0 +1,19 @@
+### Health — /health
+#
+# The split between these two is the design decision, not the endpoints themselves.
+
+### Liveness — 200 whenever the process is up, with an empty checks array.
+# It runs no dependency checks at all. A liveness probe that reached PostgreSQL would mean a
+# database outage causes Kubernetes to restart every replica in a loop, which cannot help and
+# actively hinders recovery by hammering the database with reconnections as each pod starts.
+GET {{host}}/health/live
+
+### Readiness — 200 when the dependencies needed to serve traffic are reachable, 503 when not.
+# Two checks, weighted differently. PostgreSQL failing makes this Unhealthy, because the API
+# genuinely cannot serve without it. Redis failing reports Degraded — still a 200 — because it is a
+# cache in front of the source of truth: an instance that cannot reach it answers every endpoint
+# correctly, only more slowly.
+#
+# To see the difference, stop the Redis container and call this again: still 200, with redis
+# reported as Degraded and the API still serving.
+GET {{host}}/health/ready

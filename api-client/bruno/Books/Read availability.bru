@@ -1,0 +1,25 @@
+meta {
+  name: Read availability
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{host}}/books/{{bookId}}/availability
+  body: none
+  auth: none
+}
+
+docs {
+  200. Served through Redis, and advisory - which the response says itself: calculatedAt
+  stamps when the figure was taken, and canBeLoaned is a statement about a moment that has
+  already passed by the time you read it.
+
+  Nothing in the loan path consults this. Whether a copy can actually be taken is decided
+  once, inside POST /loans, by an atomic conditional UPDATE against PostgreSQL. This
+  endpoint is for showing a reader whether it is worth trying.
+
+  Every write that moves the count - a loan, a return, a cancellation, a change to the total
+  - drops this key immediately after its transaction commits, so run this before and after
+  Loans > Lend a copy to see it refresh.
+}

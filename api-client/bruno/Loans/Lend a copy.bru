@@ -1,0 +1,58 @@
+meta {
+  name: Lend a copy
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/loans
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Idempotency-Key: {{idempotencyKey}}
+}
+
+body:json {
+  {
+    "bookId": "{{bookId}}",
+    "userId": "{{userId}}",
+    "loanDays": 14
+  }
+}
+
+script:pre-request {
+  // A fresh key per run, so this request genuinely lends rather than replaying the loan a
+  // previous run made. The next two requests reuse whatever this one set, which is what lets
+  // them demonstrate a replay and a conflict against a loan that exists right now.
+  //
+  // Pin it with `--env-var idempotencyKey=...` to retry a specific key by hand.
+  if (!bru.getEnvVar("pinIdempotencyKey")) {
+    bru.setVar("idempotencyKey", `bruno-loan-${Date.now()}`);
+  }
+}
+
+script:post-response {
+  if (res.body.data && res.body.data.id) {
+    bru.setVar("loanId", res.body.data.id);
+  }
+}
+
+docs {
+  201. Stores the new loan's id as loanId.
+
+  The Idempotency-Key header is required, not optional: without it this is a 400.
+
+  Underneath, the copy is taken by a single conditional UPDATE whose WHERE clause carries the
+  rule (is_active AND available_copies > 0), and the loan row, the audit entry and the
+  idempotency record are committed with it or not at all.
+
+  Two requests racing for the last copy produce exactly one 201 and one 409. To see it, seed a
+  book with totalCopies 1, register a second reader, and send this twice at once.
+
+  409 also covers: the book is withdrawn, and this reader already holds a copy of this title -
+  the last enforced by a partial unique index over active loans, not only by a check the
+  handler makes.
+}

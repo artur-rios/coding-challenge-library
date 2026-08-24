@@ -1,0 +1,103 @@
+### Loans — /loans
+#
+# Run books.http's "Create a book" and users.http's "Register a reader" first: this file needs both
+# ids.
+#
+# The idempotencyKey in http-client.env.json is deliberately a fixed value, so the second and third
+# requests here can demonstrate what happens when a key is repeated.
+#
+# Change it before each run that should genuinely lend: a key left from a previous run replays that
+# run's loan rather than making a new one, which is the mechanism working and is confusing if you
+# did not expect it.
+
+### Lend a copy — 201. Stores the loan id.
+# The Idempotency-Key header is required, not optional: without it this is a 400.
+#
+# The copy is taken by a single conditional UPDATE whose WHERE clause carries the rule
+# (is_active AND available_copies > 0), and the loan row, the audit entry and the idempotency
+# record are committed with it or not at all.
+#
+# 409 covers: no copies available, the book is withdrawn, and this reader already holds a copy of
+# this title — the last enforced by a partial unique index over active loans, not only by a check
+# the handler makes.
+POST {{host}}/loans
+X-Actor: {{actor}}
+Idempotency-Key: {{idempotencyKey}}
+Content-Type: application/json
+
+{
+  "bookId": "{{bookId}}",
+  "userId": "{{userId}}",
+  "loanDays": 14
+}
+
+> {%
+    if (response.body.data && response.body.data.id) {
+        client.global.set("loanId", response.body.data.id);
+        client.log("Stored loanId " + response.body.data.id);
+    }
+%}
+
+### Replay the same Idempotency-Key — 201, same loan, "replayed": true.
+# Identical to the request above in every respect, which is the point: same key, same body, so the
+# API answers rather than executes. No second loan is created and availability does not move again
+# — check with books.http's "Read availability" before and after.
+POST {{host}}/loans
+X-Actor: {{actor}}
+Idempotency-Key: {{idempotencyKey}}
+Content-Type: application/json
+
+{
+  "bookId": "{{bookId}}",
+  "userId": "{{userId}}",
+  "loanDays": 14
+}
+
+### Reuse the key with a different request — 409, and meant to be.
+# Same key, but loanDays is 30 rather than 14 — a different request wearing a used key. Replaying
+# the first response would tell the caller a loan was made that they did not ask for.
+#
+# The comparison is a SHA-256 of the request's values rather than of its raw bytes, so reformatting
+# the JSON or reordering its properties does not make an honest retry look like this.
+POST {{host}}/loans
+X-Actor: {{actor}}
+Idempotency-Key: {{idempotencyKey}}
+Content-Type: application/json
+
+{
+  "bookId": "{{bookId}}",
+  "userId": "{{userId}}",
+  "loanDays": 30
+}
+
+### Omit the Idempotency-Key — 400.
+# Required by this endpoint, so its absence is an input error like any other.
+POST {{host}}/loans
+X-Actor: {{actor}}
+Content-Type: application/json
+
+{
+  "bookId": "{{bookId}}",
+  "userId": "{{userId}}"
+}
+
+### Return a copy — 200. The loan is kept and moves to Returned.
+# Both halves are conditional updates. The loan moves only if it is still Active, so two concurrent
+# returns cannot both succeed — which would otherwise credit the shelf with two copies for one
+# loan. Repeating this is a 409 and the shelf is not credited twice.
+POST {{host}}/loans/{{loanId}}/return
+X-Actor: {{actor}}
+
+### Cancel a loan — 200. The row stays and moves to Cancelled.
+# A state deliberately distinct from Returned: a cancelled loan is not one the reader ever
+# fulfilled, and the history has to be able to say which of the two happened months later.
+#
+# The body is optional — a cancellation with no reason is a 200, not a 400. Run after "Return a
+# copy" and this answers 409 naming the return, which is the message doing its job.
+POST {{host}}/loans/{{loanId}}/cancel
+X-Actor: {{actor}}
+Content-Type: application/json
+
+{
+  "reason": "Reader changed their mind"
+}

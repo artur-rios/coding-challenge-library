@@ -165,6 +165,16 @@ them first.
 available) is a 409. A request that is well-formed, collides with nothing, and is refused by a rule
 about the value itself — lowering a book's total below the copies currently on loan — is a 422.
 
+### Ready-to-send requests
+
+[`api-client/`](api-client) holds the same 15 operations in two formats — a
+[Bruno](https://www.usebruno.com) collection and JetBrains `.http` files. Both chain the ids they
+create, so nothing has to be copied by hand, and the Bruno collection runs clean end to end:
+
+```bash
+npx @usebruno/cli run -r --env Local
+```
+
 ### Error format
 
 Failures are RFC 9457 Problem Details, as the challenge prefers:
@@ -218,6 +228,7 @@ src/
 tests/
   Common/          Library.Testing             fakes, container fixtures, HTTP gateway, test base
   Domain/ Application/ Infrastructure/ Presentation/    one test project per layer
+api-client/        bruno/ and http/            ready-to-send requests for every endpoint
 ```
 
 `src/Common` holds the small building blocks the rest is written against — a result envelope, a

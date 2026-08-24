@@ -1,0 +1,35 @@
+meta {
+  name: Cancel a loan
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{host}}/loans/{{loanId}}/cancel
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "reason": "Reader changed their mind"
+  }
+}
+
+docs {
+  200. The row stays and moves to Cancelled - a state deliberately distinct from Returned,
+  because a cancelled loan is not one the reader ever fulfilled and the history has to be
+  able to say which of the two happened months later.
+
+  The body is optional: a cancellation with no reason is ordinary, and sending none is a 200
+  rather than a 400. The reason is recorded on the audit entry, truncated rather than
+  trusted to be short.
+
+  409 if the loan was already returned or cancelled - and the message names which of the two
+  it actually is rather than a generic conflict. Run this after "Return a copy" in a folder
+  run and that is exactly what you will see.
+}

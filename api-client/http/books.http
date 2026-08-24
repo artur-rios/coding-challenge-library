@@ -1,0 +1,75 @@
+### Books — /books
+#
+# "Create a book" stores the new book's id, which this file and loans.http then use. Nothing here
+# needs a token: the API has no authentication of its own. X-Actor is what the audit trail records,
+# and it is self-asserted — the trail stores a claim, not a verified identity.
+#
+# Deactivating a book is in withdrawal.http rather than at the end of this file: it is refused while
+# copies are out, so running it here would withdraw the title before loans.http borrowed from it.
+
+### Create a book — 201, or 409 on a re-run.
+# totalCopies is 1 on purpose: it is what makes a second loan attempt demonstrate the availability
+# refusal rather than quietly succeeding. The ISBN is validated by checksum and stored normalised,
+# so 978-0-13-475759-9 and 9780134757599 are the same book and the second is a 409.
+#
+# That also means running this twice answers 409 — correctly. Change isbn in http-client.env.json
+# to seed another title. (Bruno's collection mints a fresh one per run with a pre-request script;
+# .http files have no equivalent hook, so here it is a variable you edit.)
+POST {{host}}/books
+X-Actor: {{actor}}
+Content-Type: application/json
+
+{
+  "title": "Refactoring",
+  "isbn": "{{isbn}}",
+  "author": "Martin Fowler",
+  "totalCopies": 1
+}
+
+> {%
+    if (response.body.data && response.body.data.id) {
+        client.global.set("bookId", response.body.data.id);
+        client.log("Stored bookId " + response.body.data.id);
+    }
+%}
+
+### List the catalogue — 200. Served through Redis when the page is cached.
+# pageNumber starts at 1 and pageSize is capped at 200; both are validated, so 0 or 100000 answers
+# 400 rather than being silently clamped. Deactivated books are excluded unless asked for.
+GET {{host}}/books?pageNumber=1&pageSize=20&title=Refactoring&includeInactive=false
+X-Actor: {{actor}}
+
+### Read one book — 200, or 404.
+# Deactivated books are included here, unlike in the listing: a caller asking by identifier is not
+# browsing, and hiding a withdrawn title would only make it look deleted.
+GET {{host}}/books/{{bookId}}
+X-Actor: {{actor}}
+
+### Update a book — 200.
+# PATCH semantics: isbn and author are not sent, so they are left alone rather than blanked. A
+# request that sends nothing at all is a 400.
+#
+# totalCopies moves the available count by the same delta, atomically, so a copy out on loan stays
+# out. Lowering it below the copies currently lent is a 422 — well-formed, colliding with nothing,
+# refused by a rule about the value itself.
+PATCH {{host}}/books/{{bookId}}
+X-Actor: {{actor}}
+Content-Type: application/json
+
+{
+  "title": "Refactoring, second edition",
+  "totalCopies": 3
+}
+
+### Read availability — 200. Cached, and advisory.
+# calculatedAt says when the figure was taken; canBeLoaned describes a moment that has already
+# passed. Nothing in the loan path consults this — whether a copy can be taken is decided inside
+# POST /loans by an atomic conditional UPDATE. Run this before and after lending to see it refresh.
+GET {{host}}/books/{{bookId}}/availability
+X-Actor: {{actor}}
+
+### Read the loan history — 200.
+# Every loan ever made of this book, in every state, newest first. There is no way to exclude the
+# terminal states wholesale, only to narrow to one with status=Active|Returned|Cancelled.
+GET {{host}}/books/{{bookId}}/history?pageNumber=1&pageSize=20
+X-Actor: {{actor}}

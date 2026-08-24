@@ -1,0 +1,36 @@
+meta {
+  name: Reuse a key with a different request
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{host}}/loans
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Idempotency-Key: {{idempotencyKey}}
+}
+
+body:json {
+  {
+    "bookId": "{{bookId}}",
+    "userId": "{{userId}}",
+    "loanDays": 30
+  }
+}
+
+docs {
+  409, and meant to be.
+
+  The same key as the two requests above, but loanDays is 30 rather than 14 - so this is a
+  different request wearing a used key. Replaying the first response would tell the caller a
+  loan was made that they did not ask for, so it is refused instead.
+
+  The comparison is a SHA-256 of the request's values rather than of its raw bytes, so
+  reformatting the JSON or reordering its properties does not make an honest retry look like
+  this. Only a value the API would have acted on differently does.
+}

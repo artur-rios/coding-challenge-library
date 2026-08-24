@@ -1,0 +1,18 @@
+### Withdrawal — DELETE /books/{id}
+#
+# In a file of its own rather than at the end of books.http, and the reason is ordering rather than
+# subject: deactivating is refused while copies are out, so running it as the last request in
+# books.http would withdraw the title before loans.http ever borrowed from it. Run this last.
+
+### Deactivate a book — 200. Deactivates; never deletes.
+# The response carries preservedLoanCount: the number of loans the row was kept for. Nothing is
+# erased, and nothing can be — the loan's foreign key is RESTRICT, so the database itself refuses
+# to delete a book with history no matter what code asks it to.
+#
+# 409 while copies are still out on loan. Closing a title while readers hold copies would leave
+# those loans pointing at a catalogue entry that no longer accepts returns — return or cancel them
+# first.
+#
+# Repeating the call is a 200 with alreadyInactive: true and nothing written.
+DELETE {{host}}/books/{{bookId}}
+X-Actor: {{actor}}

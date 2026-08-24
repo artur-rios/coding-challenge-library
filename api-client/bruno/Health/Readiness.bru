@@ -1,0 +1,24 @@
+meta {
+  name: Readiness
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/health/ready
+  body: none
+  auth: none
+}
+
+docs {
+  200 when the dependencies needed to serve traffic are reachable, 503 when they are not.
+
+  Two checks, weighted differently. PostgreSQL failing makes this Unhealthy, because the API
+  genuinely cannot serve without it. Redis failing reports Degraded - still a 200 - because
+  it is a cache in front of the source of truth: an instance that cannot reach it answers
+  every endpoint correctly, only more slowly, and taking every replica out of the load
+  balancer for that would be a strictly worse system.
+
+  The body names which dependency is unhappy and nothing more. The exception detail goes to
+  the log, where an operator reads it and an anonymous caller does not.
+}

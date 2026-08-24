@@ -1,0 +1,34 @@
+meta {
+  name: Deactivate a book
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{host}}/books/{{bookId}}
+  body: none
+  auth: none
+}
+
+docs {
+  200, and it deactivates rather than deletes - which is why this is the last request in the
+  folder rather than a destructive one you have to avoid.
+
+  The response carries preservedLoanCount: the number of loans the row was kept for. Nothing
+  is erased, and nothing can be: the loan's foreign key is RESTRICT, so the database itself
+  refuses to delete a book with history no matter what code asks it to.
+
+  409 while copies are still out on loan. Closing a title while readers hold copies would
+  leave those loans pointing at a catalogue entry that no longer accepts returns - return or
+  cancel them first.
+
+  Repeating the call is a 200 with alreadyInactive: true and nothing written. A caller
+  repeating the request has the outcome they asked for and there is nothing for them to fix.
+
+  ## Why this is not in Books
+
+  It belongs there by subject, and it is here by order. Deactivating is refused while copies
+  are out, so a full `bru run -r` with this request sitting seventh in Books would withdraw
+  the title before the Loans folder ever borrowed from it - and every loan below would then
+  answer 409. Putting it last is what makes the collection runnable end to end.
+}

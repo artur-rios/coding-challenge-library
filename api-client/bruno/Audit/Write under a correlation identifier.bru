@@ -1,0 +1,36 @@
+meta {
+  name: Write under a correlation identifier
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{host}}/books/{{bookId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-Id: {{correlationId}}
+}
+
+body:json {
+  {
+    "author": "Martin Fowler, with Kent Beck"
+  }
+}
+
+docs {
+  200. Sets up the request below by making a change under a correlation identifier we choose.
+
+  The API echoes X-Correlation-Id on every response and stamps it on every entry the request
+  produces, so supplying one here means the next request can pull the whole thing back out.
+
+  A PATCH rather than a create, deliberately: it can be run repeatedly. A create would answer
+  409 on the second run, and a refused request writes no audit entry - so the trace would come
+  back empty and look like a broken filter when it is actually the trail correctly recording
+  that nothing happened.
+
+  Needs Books > Create a book to have run first, for bookId.
+}

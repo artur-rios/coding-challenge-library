@@ -1,0 +1,26 @@
+meta {
+  name: Trace one request end to end
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{host}}/audit-events?correlationId={{correlationId}}
+  body: none
+  auth: none
+}
+
+docs {
+  200. Everything one request caused, across every entity it touched.
+
+  This is the filter that turns the trail from a list into an explanation. To use it, send
+  any write with an X-Correlation-Id header of your own - the API echoes it on every
+  response and stamps it on every entry it produces - then ask for it back here.
+
+  Run "Write under a correlation identifier" first and this returns exactly what that
+  request caused. With no header supplied the API generates one, which is still on the
+  response and still on the entries; it is only harder to guess afterwards.
+
+  An empty result after a write that answered 409 is not a broken filter - it is the trail
+  correctly recording that nothing happened. Refusals are logged, not audited.
+}

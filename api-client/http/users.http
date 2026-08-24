@@ -1,0 +1,36 @@
+### Users — /users
+#
+# "Register a reader" stores the new reader's id, which loans.http then uses.
+
+### Register a reader — 201.
+# The address is lower-cased before it is stored and compared, so registering the same address in
+# different casing afterwards is a 409 rather than a second reader — a duplicate would split one
+# person's loan history in two. Running this twice therefore answers 409 — correctly; change the
+# address to seed another reader.
+POST {{host}}/users
+X-Actor: {{actor}}
+Content-Type: application/json
+
+{
+  "name": "Ana Silva",
+  "email": "ana.silva@example.com"
+}
+
+> {%
+    if (response.body.data && response.body.data.id) {
+        client.global.set("userId", response.body.data.id);
+        client.log("Stored userId " + response.body.data.id);
+    }
+%}
+
+### Read a reader's loans — 200, or 404 when no reader holds that identifier.
+# 404 rather than an empty page, which would be indistinguishable from a reader who has never
+# borrowed anything.
+#
+# This is the reader's history, not their current shelf: returned and cancelled loans are included.
+GET {{host}}/users/{{userId}}/loans?pageNumber=1&pageSize=20
+X-Actor: {{actor}}
+
+### Read only what a reader is currently holding — 200.
+GET {{host}}/users/{{userId}}/loans?status=Active
+X-Actor: {{actor}}

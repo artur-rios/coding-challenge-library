@@ -1,0 +1,36 @@
+headers {
+  X-Actor: {{actor}}
+}
+
+docs {
+  Every request inherits the X-Actor header, so the audit trail attributes the whole
+  collection to one identity rather than recording "anonymous" for anything you forgot to
+  set it on.
+
+  There is no Authorization header anywhere, and that is the API rather than an omission:
+  it has no authentication of its own. X-Actor is therefore self-asserted - the trail
+  records a claim, not a verified identity - which the README states plainly as a
+  limitation.
+
+  ## Order on an empty database
+
+  Requests that create something store its id, and the rest of the collection reads those
+  ids. On a database with nothing in it, three requests have to run in this order before
+  any other will find its subject:
+
+    1. Books > Create a book   (stores bookId)
+    2. Users > Register a reader (stores userId)
+    3. Loans > Lend a copy     (stores loanId)
+
+  The folders are ordered by subject rather than by that sequence, because the catalogue is
+  what the API is organised around and reading the collection top to bottom should say so.
+  Running it end to end with `bru run -r` therefore answers 404 for anything scoped until
+  the three above have run - that is the collection being a reference, not a test suite.
+
+  ## The two requests that are meant to fail
+
+  Loans > Replay the same Idempotency-Key and Loans > Reuse a key with a different request
+  exist to demonstrate the idempotency contract. The first answers 201 with
+  "replayed": true and creates nothing; the second answers 409. Neither is a broken
+  request.
+}

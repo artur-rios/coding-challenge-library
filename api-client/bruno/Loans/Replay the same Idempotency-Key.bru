@@ -1,0 +1,36 @@
+meta {
+  name: Replay the same Idempotency-Key
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{host}}/loans
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Idempotency-Key: {{idempotencyKey}}
+}
+
+body:json {
+  {
+    "bookId": "{{bookId}}",
+    "userId": "{{userId}}",
+    "loanDays": 14
+  }
+}
+
+docs {
+  201, with the same loan id as "Lend a copy" and "replayed": true added.
+
+  Byte for byte the response the first call produced, plus that one flag. No second loan is
+  created and availability does not move again - run Books > Read availability before and
+  after to confirm.
+
+  This is the request that demonstrates the requirement. It is identical to the one above
+  in every respect, which is the point: same key, same body, so the API answers rather than
+  executes.
+}

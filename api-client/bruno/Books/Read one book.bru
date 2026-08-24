@@ -1,0 +1,22 @@
+meta {
+  name: Read one book
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{host}}/books/{{bookId}}
+  body: none
+  auth: none
+}
+
+docs {
+  200, or 404 when nothing holds that identifier.
+
+  Deactivated books are included here, unlike in the listing. A caller asking for a specific
+  book by identifier is not browsing, and hiding a withdrawn title from them would only make
+  it look deleted - which is the one thing this API never does.
+
+  Read straight from PostgreSQL rather than through Redis: a book by identifier is a
+  primary-key lookup, and caching it would add an invalidation path for no measurable gain.
+}

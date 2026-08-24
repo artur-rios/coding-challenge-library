@@ -1,0 +1,55 @@
+### Audit events — /audit-events
+#
+# Read-only by design. There is no endpoint that writes, edits or deletes an entry, and the entries
+# themselves are written inside the transaction of the change they describe — so a loan exists if
+# and only if the trail records it.
+#
+# Refusals are not here. The trail says what the library did; an attempt that changed no state is a
+# log line, and it is logged.
+
+### Read the audit trail — 200, newest first.
+GET {{host}}/audit-events?pageNumber=1&pageSize=20
+X-Actor: {{actor}}
+
+### Everything that ever happened to one book — 200.
+GET {{host}}/audit-events?entityType=book&entityId={{bookId}}
+X-Actor: {{actor}}
+
+### Every loan the library made — 200.
+# The action names are stable strings rather than enum numbers, because the trail is read by people
+# and by tools that never compile against this codebase.
+GET {{host}}/audit-events?action=loan.created
+X-Actor: {{actor}}
+
+### Everything one actor did — 200.
+GET {{host}}/audit-events?actor={{actor}}
+X-Actor: {{actor}}
+
+### Write something under a correlation identifier of your own, then trace it.
+# The API echoes X-Correlation-Id on every response and stamps it on every entry the request
+# produces. Supplying one here means the next request can pull the whole thing back out.
+#
+# A PATCH rather than a POST deliberately: it can be run repeatedly. A create would answer 409 on
+# the second run, and a refused request writes no audit entry — so the trace below would come back
+# empty and look like a broken filter when it is the trail correctly recording that nothing
+# happened.
+PATCH {{host}}/books/{{bookId}}
+X-Actor: {{actor}}
+X-Correlation-Id: {{correlationId}}
+Content-Type: application/json
+
+{
+  "author": "Martin Fowler, with Kent Beck"
+}
+
+### Trace that one request end to end — 200.
+# The filter that turns the trail from a list into an explanation: everything one request caused,
+# across every entity it touched.
+GET {{host}}/audit-events?correlationId={{correlationId}}
+X-Actor: {{actor}}
+
+### An unknown entity type — 400.
+# Refused rather than answered with an empty page, which is exactly the wrong answer to give
+# somebody investigating an incident.
+GET {{host}}/audit-events?entityType=spaceship
+X-Actor: {{actor}}

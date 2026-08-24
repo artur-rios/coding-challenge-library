@@ -1,0 +1,26 @@
+meta {
+  name: Read the audit trail
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/audit-events?pageNumber=1&pageSize=20
+  body: none
+  auth: none
+}
+
+docs {
+  200. The business trail, newest first: what changed, to which entity, at whose hand, when,
+  and under which request.
+
+  Read-only by design. There is no endpoint that writes, edits or deletes an entry, and the
+  entries themselves are written inside the transaction of the change they describe - so a
+  loan exists if and only if the trail records it.
+
+  Refusals are not here. The trail says what the library did; an attempt that changed no
+  state is a log line, and it is logged.
+
+  Filters: entityType (book, user, loan), entityId, action, actor, correlationId, from, to.
+  An unknown entityType is a 400 rather than an empty page.
+}

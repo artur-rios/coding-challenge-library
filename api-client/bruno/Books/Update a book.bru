@@ -1,0 +1,38 @@
+meta {
+  name: Update a book
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{host}}/books/{{bookId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Refactoring, second edition",
+    "totalCopies": 3
+  }
+}
+
+docs {
+  200. PATCH semantics: the fields not sent here - isbn and author - are left alone rather
+  than blanked. A request that sends nothing at all is a 400, because that is almost always
+  a client serializing the wrong object and answering 200 would hide it.
+
+  totalCopies moves the available count by the same delta, atomically, so a copy that is out
+  on loan stays out. Lowering it below the number of copies currently lent is a 422: the
+  request is well-formed and collides with no other record, but a business rule refuses the
+  value itself.
+
+  The two kinds of change are guarded differently on purpose. Title, author and ISBN go
+  through the optimistic concurrency stamp, so two librarians renaming the same book
+  concurrently produces a 409 for the second. The copy counts never do - a librarian adding
+  copies while a reader borrows one is not a conflict, and both changes must apply.
+}

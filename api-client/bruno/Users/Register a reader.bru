@@ -1,0 +1,47 @@
+meta {
+  name: Register a reader
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/users
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Ana Silva",
+    "email": "{{readerEmail}}"
+  }
+}
+
+script:pre-request {
+  // A fresh address per run, so this request always creates a reader and always stores userId.
+  // A fixed one would answer 409 on the second run - correctly, since the address is unique -
+  // and then every loan request below would run against a userId that was never filled in.
+  bru.setVar("readerEmail", `ana.silva+${Date.now()}@example.com`);
+}
+
+script:post-response {
+  if (res.body.data && res.body.data.id) {
+    bru.setVar("userId", res.body.data.id);
+  }
+}
+
+docs {
+  201. Stores the new reader's id as userId, which the loan requests then use.
+
+  The address is lower-cased before it is stored and compared, so registering the same one in
+  different casing afterwards is a 409 rather than a second reader - a duplicate would split
+  one person's loan history in two.
+
+  That is why the pre-request script mints a fresh address each run. To register a specific
+  reader instead, replace {{readerEmail}} in the body with the address you want, and expect a
+  409 if you send it twice.
+}
