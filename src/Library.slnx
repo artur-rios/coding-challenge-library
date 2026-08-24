@@ -1,0 +1,29 @@
+<Solution>
+  <Folder Name="/Application/">
+    <Project Path="Application/Library.Command/Library.Command.csproj" />
+    <Project Path="Application/Library.Query/Library.Query.csproj" />
+    <Project Path="Application/Library.Shared/Library.Shared.csproj" />
+  </Folder>
+  <Folder Name="/Common/">
+    <Project Path="Common/Library.Data.Relational/Library.Data.Relational.csproj" />
+    <Project Path="Common/Library.Mediator/Library.Mediator.csproj" />
+    <Project Path="Common/Library.Output/Library.Output.csproj" />
+    <Project Path="Common/Library.WebApi.Core/Library.WebApi.Core.csproj" />
+  </Folder>
+  <Folder Name="/Domain/">
+    <Project Path="Domain/Library.Domain/Library.Domain.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="Infrastructure/Library.Cache/Library.Cache.csproj" />
+    <Project Path="Infrastructure/Library.Data/Library.Data.csproj" />
+  </Folder>
+  <Folder Name="/Presentation/">
+    <Project Path="Presentation/Library.WebApi/Library.WebApi.csproj" />
+  </Folder>
+  <Project Path="../tests/Application/Library.Command.Tests/Library.Command.Tests.csproj" />
+  <Project Path="../tests/Application/Library.Query.Tests/Library.Query.Tests.csproj" />
+  <Project Path="../tests/Common/Library.Testing/Library.Testing.csproj" />
+  <Project Path="../tests/Domain/Library.Domain.Tests/Library.Domain.Tests.csproj" />
+  <Project Path="../tests/Infrastructure/Library.Data.Tests/Library.Data.Tests.csproj" />
+  <Project Path="../tests/Presentation/Library.WebApi.Tests/Library.WebApi.Tests.csproj" />
+</Solution>

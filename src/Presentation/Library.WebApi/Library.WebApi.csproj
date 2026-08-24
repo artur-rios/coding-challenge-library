@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The controllers carry the per-endpoint documentation Swagger UI shows; without the XML file
+         those summaries never leave the source. CS1591 is off because the target is the controllers,
+         which are documented - not every public member in the assembly. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <!-- Declared although the data projects also bring it: this project uses EF Core's async query
+         operators directly in its health check and its migration runner. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\Library.Command\Library.Command.csproj" />
+    <ProjectReference Include="..\..\Application\Library.Query\Library.Query.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Library.Cache\Library.Cache.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Library.Data\Library.Data.csproj" />
+  </ItemGroup>
+
+</Project>

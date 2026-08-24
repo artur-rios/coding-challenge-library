@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "Library.WebApi": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:8080",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "LIBRARY_DATA_CONNECTIONSTRING": "Host=localhost;Port=5432;Database=library;Username=library;Password=library",
+        "LIBRARY_REDIS_CONNECTIONSTRING": "localhost:6379",
+        "LIBRARY_RUN_MIGRATIONS": "true"
+      }
+    }
+  }
+}
