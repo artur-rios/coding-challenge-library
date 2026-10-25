@@ -4,7 +4,7 @@
 # built here because applying migrations needs the SDK and the dotnet-ef tool, neither of which the
 # runtime image carries - the bundle is a plain executable that a one-shot container can run before
 # the API starts, so the deployed image never needs the SDK.
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402@sha256:747cbade5bfd918a175ac32f8f1d931edec2c7d0d5397a3de72eaef1ac1f66d2 AS build
 WORKDIR /source
 
 # Restored first and on their own so the tool and package layers survive a source-only change.
@@ -49,7 +49,7 @@ RUN LIBRARY_DATA_CONNECTIONSTRING="Host=localhost;Port=5432;Database=library;Use
         --force
 
 # Runtime stage.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.13@sha256:8af87eba5e7cdafb1514d7388be287365da97c132509e84dfe252ffd552398ca AS final
 WORKDIR /app
 
 # curl is installed for the container health check alone: the runtime image ships neither curl nor
