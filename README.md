@@ -3,6 +3,10 @@
 A REST API for a library's catalogue and its loans, built for the technical challenge in
 [`docs/`](docs). .NET 10, ASP.NET Core, PostgreSQL, EF Core with Npgsql, Redis, Docker.
 
+> **Where this lives:** the repository is at
+> <https://git.techcraftsmen.net/artur-rios/coding-challenge-library>. The GitHub
+> repository is a read-only mirror of it.
+
 The scope is deliberately small. What it is trying to demonstrate is not the number of endpoints but
 the handful of decisions the challenge actually asks about: that two simultaneous requests cannot lend
 the same last copy, that a retried request cannot lend a second one, that nothing is ever erased
@@ -503,10 +507,10 @@ What the challenge asks for specifically:
 Test names follow `GivenSomeCondition_WhenSomeAction_ThenSomeOutcome`, and each body is marked
 `// Given` / `// When` / `// Then`.
 
-CI ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) runs all three suites plus a
-vulnerable-dependency scan, and builds the container image in a separate job — the Dockerfile
+CI runs all three suites plus a vulnerable-dependency scan (the `test` check, [`ci/test.sh`](ci/test.sh)), and
+builds the container image in a separate check (`docker`, [`ci/docker.sh`](ci/docker.sh)) — the Dockerfile
 restores from a hand-listed set of project files, so a new project can break the image build while
-every test stays green.
+every test stays green. Jenkins runs both; [`yggdrasil.yml`](yggdrasil.yml) says how.
 
 ---
 
