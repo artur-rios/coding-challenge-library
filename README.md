@@ -1,5 +1,11 @@
 # Library Loans API
 
+> [!NOTE]
+> This is the real, open-source code of coding-challenge-library. Its home is Forgejo, at
+> https://git.techcraftsmen.net/artur-rios/coding-challenge-library; the copy on GitHub is a read-only mirror, for viewing only, and
+> its issues and pull requests are not followed. If you want to contribute, email me at
+> arturdev@duck.com.
+
 A REST API for a library's catalogue and its loans, built for the technical challenge in
 [`docs/`](docs). .NET 10, ASP.NET Core, PostgreSQL, EF Core with Npgsql, Redis, Docker.
 
