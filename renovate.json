@@ -1,0 +1,4 @@
+{
+  "extends": ["local>artur-rios/yggdrasil//renovate/default"],
+  "baseBranchPatterns": ["main"]
+}

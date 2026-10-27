@@ -1,0 +1,21 @@
+# What Jenkins checks for this repository, read by the pipeline of the yggdrasil installation that deploys it
+# (yggdrasil's docs/catalog.md, "Repository pipeline file", has every field). It is data, never code: images
+# (pinned by version and digest, which Renovate keeps up to date), commands, globs and
+# the names of Jenkins credentials. The commands are the scripts under ci/, which run from the repository's root, so
+# you can run them on your machine too. Check it where the catalog is, in the yggdrasil checkout:
+#   python3 scripts/pipeline_config.py describe coding-challenge-library <this repository's checkout>
+#
+# Each check is a job of tests.yml (the workflow file was deleted). tests.yml had no path filters, and neither do the
+# checks: a test suite is the one check that should run for every change.
+
+checks:
+  test:                                  # tests.yml / test: restore, vulnerability scan, build, unit, integration and functional tests
+    image: mcr.microsoft.com/dotnet/sdk:10.0.402@sha256:747cbade5bfd918a175ac32f8f1d931edec2c7d0d5397a3de72eaef1ac1f66d2
+    run: ci/test.sh
+    docker: true                         # the integration and functional tests start PostgreSQL and Redis with Testcontainers
+    archive: "**/TestResults/**"         # the test results and coverage, as the workflow uploaded them
+
+  docker:                                # tests.yml / docker: the Dockerfile builds
+    image: docker:29.9.2-cli@sha256:5e6baf67325a79f64ed3bed6863954d5e05d0f3d4e57cbdb14809346814bbfdb
+    run: ci/docker.sh
+    docker: true                         # docker build, on the CI engine
