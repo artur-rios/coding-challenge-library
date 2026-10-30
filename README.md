@@ -1,17 +1,7 @@
 # Library Loans API
 
-> [!NOTE]
-> This is the real, open-source code of coding-challenge-library. Its home is Forgejo, at
-> https://git.techcraftsmen.net/artur-rios/coding-challenge-library; the copy on GitHub is a read-only mirror, for viewing only, and
-> its issues and pull requests are not followed. If you want to contribute, email me at
-> arturdev@duck.com.
-
 A REST API for a library's catalogue and its loans, built for the technical challenge in
 [`docs/`](docs). .NET 10, ASP.NET Core, PostgreSQL, EF Core with Npgsql, Redis, Docker.
-
-> **Where this lives:** the repository is at
-> <https://git.techcraftsmen.net/artur-rios/coding-challenge-library>. The GitHub
-> repository is a read-only mirror of it.
 
 The scope is deliberately small. What it is trying to demonstrate is not the number of endpoints but
 the handful of decisions the challenge actually asks about: that two simultaneous requests cannot lend
@@ -585,3 +575,8 @@ Written for this challenge, against the structure and conventions of an existing
 canonical messages mapped to status codes, the Given/When/Then test style. The building blocks in
 `src/Common` are reimplemented here from scratch rather than taken from published packages, so the
 repository is self-contained and every line in it is up for discussion.
+
+## Contributing
+
+The GitHub repository is a read-only mirror for the real, open-source code of coding-challenge-library. Its home is Forgejo, at
+https://git.techcraftsmen.net/artur-rios/coding-challenge-library. If you want to contribute, e-mail me at arturdev@duck.com.
