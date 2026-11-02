@@ -20,7 +20,7 @@
     otherwise stay a patch behind Microsoft.EntityFrameworkCore.
   -->
   <ItemGroup>
-    <PackageVersion Include="EFCore.NamingConventions" Version="10.0.0" />
+    <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Analyzers" Version="10.0.11" />
