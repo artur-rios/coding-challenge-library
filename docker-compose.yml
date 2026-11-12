@@ -29,7 +29,7 @@ services:
       start_period: 10s
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: unless-stopped
     # Persistence off. Redis holds nothing here that PostgreSQL is not the source of truth for, so
     # there is nothing worth writing to disk - and an appendonly file would only create something to
