@@ -10,7 +10,7 @@
 
 checks:
   test:                                  # tests.yml / test: restore, vulnerability scan, build, unit, integration and functional tests
-    image: mcr.microsoft.com/dotnet/sdk:10.0.402@sha256:747cbade5bfd918a175ac32f8f1d931edec2c7d0d5397a3de72eaef1ac1f66d2
+    image: mcr.microsoft.com/dotnet/sdk:10.0.404@sha256:fe0fd4e93bd2fbb47c883b7a6369e5c8d3db8bf01cdc5981f6ee35fbdf3ff4fb
     run: ci/test.sh
     docker: true                         # the integration and functional tests start PostgreSQL and Redis with Testcontainers
     archive: "**/TestResults/**"         # the test results and coverage, as the workflow uploaded them
