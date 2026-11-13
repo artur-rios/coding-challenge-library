@@ -30,7 +30,7 @@ public sealed class LibraryContainers : IAsyncLifetime
     // Pinned images, and the same major versions Compose runs. A suite that silently followed
     // "latest" would report a passing build on a database the deployment does not use.
     private readonly PostgreSqlContainer _postgres =
-        new PostgreSqlBuilder("postgres:17-alpine").Build();
+        new PostgreSqlBuilder("postgres:18-alpine").Build();
 
     private readonly RedisContainer _redis = new RedisBuilder("redis:7-alpine").Build();
 

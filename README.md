@@ -58,6 +58,11 @@ standard ports regardless.
 docker compose --env-file docker/local.env down -v   # stop, and drop the data volume
 ```
 
+A data volume created before the move to PostgreSQL 18 holds a PostgreSQL 17 cluster at a path 18 no
+longer reads, so the `postgres` container will not start on it. Drop it with the command above and
+`up` again: the migrator recreates the schema. To keep what is in it, run `pg_dump` against it with
+the old image before dropping it, and restore the dump into the new one.
+
 ### A five-command tour
 
 ```bash
@@ -482,7 +487,7 @@ dotnet test src/Library.slnx --filter "Category=Functional"    #  40, end to end
 dotnet test src/Library.slnx                                   # everything
 ```
 
-The last two need a Docker daemon; Testcontainers starts PostgreSQL 17 and Redis 7 once per suite and
+The last two need a Docker daemon; Testcontainers starts PostgreSQL 18 and Redis 7 once per suite and
 applies the migrations to them.
 
 **Real containers, not an in-memory provider.** Everything this API does about concurrency is
