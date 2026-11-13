@@ -6,14 +6,17 @@
 # The API answers on http://localhost:8080, with Swagger UI at http://localhost:8080/swagger.
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-library}
       POSTGRES_USER: ${DB_USER:?set DB_USER in the env file}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in the env file}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # The parent of the data directory, not the data directory itself. From 18 the image keeps its
+      # data in a versioned subdirectory (/var/lib/postgresql/18/docker), and it refuses to start when
+      # something is mounted at the old /var/lib/postgresql/data.
+      - postgres-data:/var/lib/postgresql
     ports:
       # Published so a developer can connect a client to it. Bound to the loopback interface only:
       # this container has a password from a file in the repository's own example, and it has no
