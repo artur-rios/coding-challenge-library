@@ -216,4 +216,122 @@ public class ReturnAndCancelLoanCommandHandlerTests
         Assert.Equal(AuditActions.LoanCancelled, entry.Action);
         Assert.Equal("Lost in transit", entry.Data.GetType().GetProperty("Reason")!.GetValue(entry.Data));
     }
+
+    [UnitFact]
+    public async Task GivenUnknownLoan_WhenCancelling_ThenNotFoundIsReported()
+    {
+        // Given
+        var harness = new LoanHandlerHarness();
+
+        // When
+        var output = await harness.CancelLoanHandler()
+            .HandleAsync(new CancelLoanCommand { Id = Guid.NewGuid() });
+
+        // Then
+        Assert.False(output.Success);
+        Assert.Contains(LoanMessages.LoanNotFound, output.Errors);
+        Assert.Equal(0, harness.UnitOfWork.TransactionCount);
+    }
+
+    [UnitFact]
+    public async Task GivenReturnedLoan_WhenCancelling_ThenTheReturnIsReported()
+    {
+        // Given
+        var harness = new LoanHandlerHarness();
+        var book = await harness.SeedBookAsync(totalCopies: 1);
+        var user = await harness.SeedUserAsync();
+        var loan = await harness.SeedLoanAsync(book, user, LoanStatus.Returned);
+
+        // When
+        var output = await harness.CancelLoanHandler()
+            .HandleAsync(new CancelLoanCommand { Id = loan.PublicId });
+
+        // Then - the message names the state the loan is actually in, and no copy is credited
+        Assert.False(output.Success);
+        Assert.Contains(LoanMessages.LoanAlreadyReturned, output.Errors);
+        Assert.Equal(1, book.AvailableCopies);
+        Assert.Empty(harness.Cache.RemovedKeys);
+    }
+
+    [UnitFact]
+    public async Task GivenConcurrentTransition_WhenCancelling_ThenTheLoserIsRefusedAndNoCopyIsCredited()
+    {
+        // Given a loan another request moves first, so the conditional update matches no row
+        var harness = new LoanHandlerHarness();
+        var book = await harness.SeedBookAsync(totalCopies: 2, availableCopies: 1);
+        var user = await harness.SeedUserAsync();
+        var loan = await harness.SeedLoanAsync(book, user);
+        harness.Transitions.NextTransitionFails = true;
+
+        // When
+        var output = await harness.CancelLoanHandler()
+            .HandleAsync(new CancelLoanCommand { Id = loan.PublicId });
+
+        // Then
+        Assert.False(output.Success);
+        Assert.Contains(LoanMessages.LoanAlreadyCancelled, output.Errors);
+        Assert.Equal(1, book.AvailableCopies);
+        Assert.False(harness.UnitOfWork.Committed);
+        Assert.Empty(harness.Cache.RemovedKeys);
+    }
+
+    [UnitFact]
+    public async Task GivenReleaseThatWouldExceedTheTotal_WhenCancelling_ThenInconsistencyIsReported()
+    {
+        // Given
+        var harness = new LoanHandlerHarness();
+        var book = await harness.SeedBookAsync(totalCopies: 2, availableCopies: 1);
+        var user = await harness.SeedUserAsync();
+        var loan = await harness.SeedLoanAsync(book, user);
+        harness.Reserver.NextReleaseFails = true;
+
+        // When
+        var output = await harness.CancelLoanHandler()
+            .HandleAsync(new CancelLoanCommand { Id = loan.PublicId });
+
+        // Then - reported rather than ignored, and the transition is rolled back with it
+        Assert.False(output.Success);
+        Assert.Contains(LoanMessages.AvailabilityInconsistent, output.Errors);
+        Assert.False(harness.UnitOfWork.Committed);
+        Assert.Empty(harness.Audit.Entries);
+    }
+
+    [UnitTheory]
+    [InlineData(500, 500)]
+    [InlineData(501, 500)]
+    [InlineData(10, 10)]
+    public async Task GivenACancellationReason_WhenCancelling_ThenTheAuditEntryKeepsAtMostFiveHundredCharacters(
+        int length, int recorded)
+    {
+        // Given
+        var harness = new LoanHandlerHarness();
+        var book = await harness.SeedBookAsync(totalCopies: 1, availableCopies: 0);
+        var user = await harness.SeedUserAsync();
+        var loan = await harness.SeedLoanAsync(book, user);
+        var reason = new string('r', length);
+
+        // When
+        await harness.CancelLoanHandler().HandleAsync(new CancelLoanCommand { Id = loan.PublicId, Reason = reason });
+
+        // Then
+        var entry = Assert.Single(harness.Audit.Entries);
+        Assert.Equal(reason[..recorded], entry.Data.GetType().GetProperty("Reason")!.GetValue(entry.Data));
+    }
+
+    [UnitFact]
+    public async Task GivenNoReason_WhenCancelling_ThenTheAuditEntryRecordsNone()
+    {
+        // Given
+        var harness = new LoanHandlerHarness();
+        var book = await harness.SeedBookAsync(totalCopies: 1, availableCopies: 0);
+        var user = await harness.SeedUserAsync();
+        var loan = await harness.SeedLoanAsync(book, user);
+
+        // When
+        await harness.CancelLoanHandler().HandleAsync(new CancelLoanCommand { Id = loan.PublicId });
+
+        // Then
+        var entry = Assert.Single(harness.Audit.Entries);
+        Assert.Null(entry.Data.GetType().GetProperty("Reason")!.GetValue(entry.Data));
+    }
 }

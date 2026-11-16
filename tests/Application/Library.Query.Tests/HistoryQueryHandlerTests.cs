@@ -175,4 +175,65 @@ public class HistoryQueryHandlerTests
         Assert.False(output.Success);
         Assert.Contains(UserMessages.UserNotFound, output.Errors);
     }
+
+    [UnitTheory]
+    [InlineData(0, 50, PaginationMessages.InvalidPageNumber)]
+    [InlineData(1, 0, PaginationMessages.InvalidPageSize)]
+    [InlineData(1, 201, PaginationMessages.InvalidPageSize)]
+    public async Task GivenInvalidPaging_WhenReadingBookHistory_ThenItIsRefusedBeforeAnyRead(
+        int pageNumber, int pageSize, string error)
+    {
+        // Given
+        var (books, loans) = (new AsyncFakeRepository<Book>(), new AsyncFakeRepository<Loan>());
+        var handler = new GetBookHistoryQueryHandler(new GetBookHistoryQueryValidator(), books, loans);
+
+        // When
+        var output = await handler.HandleAsync(
+            new GetBookHistoryQuery { BookId = Guid.NewGuid(), PageNumber = pageNumber, PageSize = pageSize });
+
+        // Then - the paging error, not the not-found a read would have produced
+        Assert.False(output.Success);
+        Assert.Equal([error], output.Errors);
+    }
+
+    [UnitTheory]
+    [InlineData(0, 50, PaginationMessages.InvalidPageNumber)]
+    [InlineData(1, 0, PaginationMessages.InvalidPageSize)]
+    [InlineData(1, 201, PaginationMessages.InvalidPageSize)]
+    public async Task GivenInvalidPaging_WhenReadingAUsersLoans_ThenItIsRefusedBeforeAnyRead(
+        int pageNumber, int pageSize, string error)
+    {
+        // Given
+        var (users, loans) = (new AsyncFakeRepository<User>(), new AsyncFakeRepository<Loan>());
+        var handler = new GetUserLoansQueryHandler(new GetUserLoansQueryValidator(), users, loans);
+
+        // When
+        var output = await handler.HandleAsync(
+            new GetUserLoansQuery { UserId = Guid.NewGuid(), PageNumber = pageNumber, PageSize = pageSize });
+
+        // Then
+        Assert.False(output.Success);
+        Assert.Equal([error], output.Errors);
+    }
+
+    [UnitFact]
+    public async Task GivenAStatusFilter_WhenReadingAUsersLoans_ThenOnlyLoansInThatStateAreReturned()
+    {
+        // Given a reader with one loan in each state
+        var books = new AsyncFakeRepository<Book>();
+        var users = new AsyncFakeRepository<User>();
+        var loans = new AsyncFakeRepository<Loan>();
+        var (book, user) = await SeedPairAsync(books, users);
+        await SeedLoanAsync(loans, book, user, LoanStatus.Active, daysAgo: 1);
+        await SeedLoanAsync(loans, book, user, LoanStatus.Returned, daysAgo: 10);
+        await SeedLoanAsync(loans, book, user, LoanStatus.Cancelled, daysAgo: 20);
+        var handler = new GetUserLoansQueryHandler(new GetUserLoansQueryValidator(), users, loans);
+
+        // When
+        var output = await handler.HandleAsync(new GetUserLoansQuery { UserId = user.PublicId, Status = LoanStatus.Returned });
+
+        // Then
+        var loan = Assert.Single(output.Data!);
+        Assert.Equal(LoanStatus.Returned, loan.Status);
+    }
 }
