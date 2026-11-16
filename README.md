@@ -232,6 +232,7 @@ src/
   Presentation/    Library.WebApi              controllers, health checks, telemetry, composition
 tests/
   Common/          Library.Testing             fakes, container fixtures, HTTP gateway, test base
+                   Library.Common.Tests        the src/Common building blocks: envelopes, middleware, errors
   Domain/ Application/ Infrastructure/ Presentation/    one test project per layer
 api-client/        bruno/ and http/            ready-to-send requests for every endpoint
 ```
@@ -478,10 +479,10 @@ connections, and flapping costs more than running warm.
 
 ## Tests
 
-170 tests, in three suites, run separately because they cost different things.
+256 tests, in three suites, which can run apart because they cost different things.
 
 ```bash
-dotnet test src/Library.slnx --filter "Category=Unit"          # 106, no I/O, ~1s
+dotnet test src/Library.slnx --filter "Category=Unit"          # 192, no I/O, ~1s
 dotnet test src/Library.slnx --filter "Category=Integration"   #  24, real PostgreSQL + Redis
 dotnet test src/Library.slnx --filter "Category=Functional"    #  40, end to end over HTTP
 dotnet test src/Library.slnx                                   # everything
@@ -499,7 +500,7 @@ What the challenge asks for specifically:
 
 | Requirement | Where |
 |---|---|
-| Unit tests of the business rules | `Library.Command.Tests`, `Library.Query.Tests`, `Library.Domain.Tests` |
+| Unit tests of the business rules | `Library.Command.Tests`, `Library.Query.Tests`, `Library.Domain.Tests`, `Library.Common.Tests` |
 | Integration tests against real PostgreSQL | `Library.Data.Tests`, `Library.WebApi.Tests` |
 | Concurrent test for the last available copy | `LoanConcurrencyTests`, `BookCopyReserverTests` |
 | Idempotency test | `LoanIdempotencyTests`, `IdempotencyStoreTests` |
@@ -508,7 +509,8 @@ What the challenge asks for specifically:
 Test names follow `GivenSomeCondition_WhenSomeAction_ThenSomeOutcome`, and each body is marked
 `// Given` / `// When` / `// Then`.
 
-CI runs all three suites plus a vulnerable-dependency scan (the `test` check, [`ci/test.sh`](ci/test.sh)), and
+CI runs all three suites in one `dotnet test` run, each test project in a process of its own and side by side, plus
+a vulnerable-dependency scan (the `test` check, [`ci/test.sh`](ci/test.sh)), and
 builds the container image in a separate check (`docker`, [`ci/docker.sh`](ci/docker.sh)) — the Dockerfile
 restores from a hand-listed set of project files, so a new project can break the image build while
 every test stays green. Jenkins runs both; [`yggdrasil.yml`](yggdrasil.yml) says how.
