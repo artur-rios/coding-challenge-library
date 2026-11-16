@@ -22,6 +22,7 @@
   </Folder>
   <Project Path="../tests/Application/Library.Command.Tests/Library.Command.Tests.csproj" />
   <Project Path="../tests/Application/Library.Query.Tests/Library.Query.Tests.csproj" />
+  <Project Path="../tests/Common/Library.Common.Tests/Library.Common.Tests.csproj" />
   <Project Path="../tests/Common/Library.Testing/Library.Testing.csproj" />
   <Project Path="../tests/Domain/Library.Domain.Tests/Library.Domain.Tests.csproj" />
   <Project Path="../tests/Infrastructure/Library.Data.Tests/Library.Data.Tests.csproj" />
