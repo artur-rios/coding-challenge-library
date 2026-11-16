@@ -32,15 +32,13 @@ if grep -q "has the following vulnerable packages" "$report"; then
   exit 1
 fi
 
-# Build solution. Built once here so all three test steps run with --no-build and none of them pays for it.
+# Build solution. Built once here so the test run below runs with --no-build and does not pay for it.
 dotnet build "$SOLUTION" --configuration Release --no-restore
 
-# Run unit tests. The Category trait comes from the [UnitFact] / [UnitTheory] attributes, so this filter needs no
-# per-project configuration.
-dotnet test "$SOLUTION" --configuration Release --no-build --filter "Category=Unit" --collect:"XPlat Code Coverage"
-
-# Run integration tests. These start real PostgreSQL and Redis containers through Testcontainers.
-dotnet test "$SOLUTION" --configuration Release --no-build --filter "Category=Integration" --collect:"XPlat Code Coverage"
-
-# Run functional tests
-dotnet test "$SOLUTION" --configuration Release --no-build --filter "Category=Functional" --collect:"XPlat Code Coverage"
+# Run every test once: unit, integration and functional together. `dotnet test` runs the test projects side by side,
+# each in a process of its own, so the unit projects finish while Library.Data.Tests and Library.WebApi.Tests start
+# their PostgreSQL and Redis containers through Testcontainers. (The three suites used to run as three passes over the
+# solution, one after another, each pass starting every test project's process only to find most of them had no test
+# matching its filter.) The Category trait still separates them on your machine:
+# dotnet test src/Library.slnx --filter "Category=Unit".
+dotnet test "$SOLUTION" --configuration Release --no-build --collect:"XPlat Code Coverage"
