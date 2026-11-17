@@ -32,6 +32,12 @@ if grep -q "has the following vulnerable packages" "$report"; then
   exit 1
 fi
 
+# Check formatting. Fails when `dotnet format` (whitespace, code style and analyzers, at the severities .editorconfig
+# sets) would change a file; `dotnet format src/Library.slnx` applies the same fixes. EF1002 is left out: it is an
+# analyzer warning that no formatter can fix (LoanTransitionWriter interpolates a column name it picks itself into the
+# SQL), and the build still reports it.
+dotnet format "$SOLUTION" --verify-no-changes --no-restore --exclude-diagnostics EF1002
+
 # Build solution. Built once here so the test run below runs with --no-build and does not pay for it.
 dotnet build "$SOLUTION" --configuration Release --no-restore
 
