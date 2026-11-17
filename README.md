@@ -491,6 +491,12 @@ dotnet test src/Library.slnx                                   # everything
 The last two need a Docker daemon; Testcontainers starts PostgreSQL 18 and Redis 7 once per suite and
 applies the migrations to them.
 
+Before a push, also check the formatting, as CI does (drop `--verify-no-changes` to apply the fixes):
+
+```bash
+dotnet format src/Library.slnx --verify-no-changes --exclude-diagnostics EF1002
+```
+
 **Real containers, not an in-memory provider.** Everything this API does about concurrency is
 expressed in PostgreSQL — atomic conditional updates, a partial unique index, check constraints, row
 locks under `READ COMMITTED`. An in-memory provider implements none of it and would report every one
@@ -510,7 +516,8 @@ Test names follow `GivenSomeCondition_WhenSomeAction_ThenSomeOutcome`, and each 
 `// Given` / `// When` / `// Then`.
 
 CI runs all three suites in one `dotnet test` run, each test project in a process of its own and side by side, plus
-a vulnerable-dependency scan (the `test` check, [`ci/test.sh`](ci/test.sh)), and
+a vulnerable-dependency scan and a `dotnet format --verify-no-changes` formatting check (the `test` check,
+[`ci/test.sh`](ci/test.sh)), and
 builds the container image in a separate check (`docker`, [`ci/docker.sh`](ci/docker.sh)) — the Dockerfile
 restores from a hand-listed set of project files, so a new project can break the image build while
 every test stays green. Jenkins runs both; [`yggdrasil.yml`](yggdrasil.yml) says how.
@@ -587,3 +594,10 @@ repository is self-contained and every line in it is up for discussion.
 
 The GitHub repository is a read-only mirror for the real, open-source code of coding-challenge-library. Its home is Forgejo, at
 https://git.techcraftsmen.net/artur-rios/coding-challenge-library. If you want to contribute, e-mail me at arturdev@duck.com.
+
+`.git-blame-ignore-revs` lists the mechanical formatting commits, so `git blame` attributes lines to the change that
+meant them. Run this once in your clone:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```

@@ -23,7 +23,10 @@ public class CatalogEndpointTests(LibraryContainers containers) : LibraryApiTest
         // Given / When
         var response = await Gateway.PostAsync<DataOutput<BookCommandOutput>>("/books", new
         {
-            title = "Clean Architecture", isbn = UniqueIsbn(), author = "Martin", totalCopies = 4
+            title = "Clean Architecture",
+            isbn = UniqueIsbn(),
+            author = "Martin",
+            totalCopies = 4
         });
 
         // Then - a success carries the envelope with its payload and message
@@ -38,7 +41,10 @@ public class CatalogEndpointTests(LibraryContainers containers) : LibraryApiTest
         // When
         var response = await Gateway.PostAsync<DataOutput<BookCommandOutput>>("/books", new
         {
-            title = "", isbn = "nonsense", author = "", totalCopies = -1
+            title = "",
+            isbn = "nonsense",
+            author = "",
+            totalCopies = -1
         });
 
         // Then - RFC 9457, with every message rather than only the first, and the correlation
@@ -77,7 +83,10 @@ public class CatalogEndpointTests(LibraryContainers containers) : LibraryApiTest
 
         await Gateway.PostAsync<DataOutput<BookCommandOutput>>("/books", new
         {
-            title = "Normalised", isbn, author = "Author", totalCopies = 1
+            title = "Normalised",
+            isbn,
+            author = "Author",
+            totalCopies = 1
         });
 
         // When the same ISBN arrives hyphenated
@@ -85,7 +94,10 @@ public class CatalogEndpointTests(LibraryContainers containers) : LibraryApiTest
 
         var second = await Gateway.PostAsync<DataOutput<BookCommandOutput>>("/books", new
         {
-            title = "Normalised Again", isbn = hyphenated, author = "Author", totalCopies = 1
+            title = "Normalised Again",
+            isbn = hyphenated,
+            author = "Author",
+            totalCopies = 1
         });
 
         // Then - uniqueness is about books, not about strings

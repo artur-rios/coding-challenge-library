@@ -21,8 +21,12 @@ public class HistoryQueryHandlerTests
     {
         var book = new Book
         {
-            PublicId = Guid.NewGuid(), Title = "Refactoring", Author = "Fowler",
-            Isbn = "9780134757599", TotalCopies = 3, AvailableCopies = 3
+            PublicId = Guid.NewGuid(),
+            Title = "Refactoring",
+            Author = "Fowler",
+            Isbn = "9780134757599",
+            TotalCopies = 3,
+            AvailableCopies = 3
         };
 
         var user = new User { PublicId = Guid.NewGuid(), Name = "Ana", Email = "ana@test.local" };

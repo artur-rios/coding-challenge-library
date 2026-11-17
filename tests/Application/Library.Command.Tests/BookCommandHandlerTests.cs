@@ -168,7 +168,9 @@ public class BookCommandHandlerTests
         var output = await harness.UpdateBookHandler()
             .HandleAsync(new UpdateBookCommand
             {
-                Id = book.PublicId, Title = "Renamed", TotalCopies = 1
+                Id = book.PublicId,
+                Title = "Renamed",
+                TotalCopies = 1
             });
 
         // Then - refused, and the title change goes back with it rather than being left half-applied
@@ -286,7 +288,8 @@ public class BookCommandHandlerTests
         // When
         var output = await harness.CreateUserHandler().HandleAsync(new CreateUserCommand
         {
-            Name = " Ana Silva ", Email = "Ana.Silva@Example.COM"
+            Name = " Ana Silva ",
+            Email = "Ana.Silva@Example.COM"
         });
 
         // Then - normalised, so the unique index means "already registered" rather than "same casing"
@@ -305,7 +308,8 @@ public class BookCommandHandlerTests
         // When
         var output = await harness.CreateUserHandler().HandleAsync(new CreateUserCommand
         {
-            Name = "Ana Silva", Email = "ana@example.com"
+            Name = "Ana Silva",
+            Email = "ana@example.com"
         });
 
         // Then

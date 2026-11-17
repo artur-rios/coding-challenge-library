@@ -33,7 +33,10 @@ public class AuditTrailTests(LibraryContainers containers) : LibraryApiTest(cont
 
         var createBook = await Gateway.PostAsync<DataOutput<BookCommandOutput>>("/books", new
         {
-            title = "Audited Title", isbn = UniqueIsbn(), author = "Author", totalCopies = 2
+            title = "Audited Title",
+            isbn = UniqueIsbn(),
+            author = "Author",
+            totalCopies = 2
         }, headers);
 
         var book = createBook.Body!.Data!;
@@ -43,7 +46,8 @@ public class AuditTrailTests(LibraryContainers containers) : LibraryApiTest(cont
 
         var createUser = await Gateway.PostAsync<DataOutput<CreateUserCommandOutput>>("/users", new
         {
-            name = "Reader", email = $"reader-{Guid.NewGuid():N}@test.local"
+            name = "Reader",
+            email = $"reader-{Guid.NewGuid():N}@test.local"
         }, headers);
 
         var reader = createUser.Body!.Data!;
@@ -88,7 +92,10 @@ public class AuditTrailTests(LibraryContainers containers) : LibraryApiTest(cont
 
         var response = await Gateway.PostAsync<DataOutput<BookCommandOutput>>("/books", new
         {
-            title = "Complete Entry", isbn = UniqueIsbn(), author = "Author", totalCopies = 1
+            title = "Complete Entry",
+            isbn = UniqueIsbn(),
+            author = "Author",
+            totalCopies = 1
         }, new Dictionary<string, string>
         {
             [ActorHeader] = "librarian@example.com",
@@ -123,7 +130,10 @@ public class AuditTrailTests(LibraryContainers containers) : LibraryApiTest(cont
         // Given a request that names nobody
         var response = await Gateway.PostAsync<DataOutput<BookCommandOutput>>("/books", new
         {
-            title = "Anonymous Write", isbn = UniqueIsbn(), author = "Author", totalCopies = 1
+            title = "Anonymous Write",
+            isbn = UniqueIsbn(),
+            author = "Author",
+            totalCopies = 1
         });
 
         var book = response.Body!.Data!;
@@ -145,7 +155,10 @@ public class AuditTrailTests(LibraryContainers containers) : LibraryApiTest(cont
 
         var response = await Gateway.PostAsync<DataOutput<BookCommandOutput>>("/books", new
         {
-            title = "Correlated", isbn = UniqueIsbn(), author = "Author", totalCopies = 1
+            title = "Correlated",
+            isbn = UniqueIsbn(),
+            author = "Author",
+            totalCopies = 1
         }, new Dictionary<string, string> { [CorrelationHeader] = correlationId });
 
         // When
