@@ -55,7 +55,7 @@
     <!-- Pinned rather than referenced: Testcontainers pulls SSH.NET in for its SSH transport, and
          the version it used to resolve carries GHSA-q939-rpr3-3284. This entry is a floor that keeps
          a future Testcontainers downgrade from silently reintroducing the advisory. -->
-    <PackageVersion Include="SSH.NET" Version="2026.0.0" />
+    <PackageVersion Include="SSH.NET" Version="2026.0.1" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
     <PackageVersion Include="Testcontainers.Redis" Version="4.16.0" />
     <PackageVersion Include="coverlet.collector" Version="10.1.1" />
