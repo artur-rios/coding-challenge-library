@@ -594,3 +594,10 @@ repository is self-contained and every line in it is up for discussion.
 
 The GitHub repository is a read-only mirror for the real, open-source code of coding-challenge-library. Its home is Forgejo, at
 https://git.techcraftsmen.net/artur-rios/coding-challenge-library. If you want to contribute, e-mail me at arturdev@duck.com.
+
+`.git-blame-ignore-revs` lists the mechanical formatting commits, so `git blame` attributes lines to the change that
+meant them. Run this once in your clone:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
